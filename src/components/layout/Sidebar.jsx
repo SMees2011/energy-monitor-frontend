@@ -35,34 +35,34 @@ const Sidebar = ({ activePage, onNavigate }) => {
             {/* Nav items */}
             <nav className="flex-1 py-2">
                 <div className="px-4 py-2 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">Menu</div>
-                {navItems.slice(0, 5).map(({ key, label, icon: Icon }) => (
+                {navItems.slice(0, 5).map((item) => (
                     <button
-                        key={key}
-                        onClick={() => onNavigate(key)}
+                        key={item.key}
+                        onClick={() => onNavigate(item.key)}
                         className={`w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors border-l-2 ${
-                            activePage === key
+                            activePage === item.key
                                 ? 'text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 border-blue-500 font-medium'
                                 : 'text-gray-500 dark:text-gray-400 border-transparent hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
                         }`}
                     >
-                        <Icon size={16} />
-                        {label}
+                        <item.icon size={16} />
+                        {item.label}
                     </button>
                 ))}
 
                 <div className="px-4 py-2 mt-2 text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider">Beheer</div>
-                {navItems.slice(5).map(({ key, label, icon: Icon }) => (
+                {navItems.slice(5).map((item) => (
                     <button
-                        key={key}
-                        onClick={() => onNavigate(key)}
+                        key={item.key}
+                        onClick={() => onNavigate(item.key)}
                         className={`w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors border-l-2 ${
-                            activePage === key
+                            activePage === item.key
                                 ? 'text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 border-blue-500 font-medium'
                                 : 'text-gray-500 dark:text-gray-400 border-transparent hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
                         }`}
                     >
-                        <Icon size={16} />
-                        {label}
+                        <item.icon size={16} />
+                        {item.label}
                     </button>
                 ))}
             </nav>
