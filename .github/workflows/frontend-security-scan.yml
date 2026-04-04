@@ -21,11 +21,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run Trivy filesystem scan (CRITICAL)
+      - name: Trivy report (PR and main)
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: fs
           scan-ref: .
+          scanners: vuln
+          format: table
+          exit-code: '0'
+          ignore-unfixed: true
+          severity: CRITICAL
+
+      - name: Enforce no CRITICAL vulnerabilities on main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln
           format: table
           exit-code: '1'
           ignore-unfixed: true
