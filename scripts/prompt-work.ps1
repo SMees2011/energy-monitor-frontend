@@ -12,6 +12,7 @@ $repoType = if ($repoName -like '*frontend*') { 'frontend' } else { 'backend' }
 
 $startScript = Join-Path $scriptDir "start-work.ps1"
 $cleanupScript = Join-Path $scriptDir "cleanup-work.ps1"
+$finishScript = Join-Path $scriptDir "finish-work.ps1"
 
 if (-not (Test-Path $startScript)) {
     throw "Could not find start-work.ps1 in scripts folder."
@@ -21,7 +22,12 @@ if (-not (Test-Path $cleanupScript)) {
     throw "Could not find cleanup-work.ps1 in scripts folder."
 }
 
-$normalized = $Prompt.Trim().ToLowerInvariant()
+if (-not (Test-Path $finishScript)) {
+    throw "Could not find finish-work.ps1 in scripts folder."
+}
+
+$rawPrompt = $Prompt.Trim()
+$normalized = $rawPrompt.ToLowerInvariant()
 
 # Start branch examples:
 # - "maak een feature branch aan met naam mobile-layout"
@@ -74,4 +80,17 @@ if ($normalized -eq 'ruim deze branch op en verwijder hem ook remote') {
     exit 0
 }
 
-throw "Prompt not recognized. Use: maak een feature/fix branch aan met naam <naam> | ruim branch <naam> in backend/frontend lokaal op | ruim branch <naam> in backend/frontend lokaal en remote op"
+# Finish work examples:
+# - "rond werk af met commit bericht voeg polling fix toe"
+# - "rond werk af met commit login flow afgerond"
+if ($rawPrompt -match '^(?i)rond\s+werk\s+af\s+met\s+commit(?:\s+bericht)?\s+(.+)$') {
+    $commitMessage = $Matches[1].Trim()
+    if (-not $commitMessage) {
+        throw "Commit message mag niet leeg zijn."
+    }
+
+    & $finishScript -CommitMessage $commitMessage
+    exit 0
+}
+
+throw "Prompt not recognized. Use: maak een feature/fix branch aan met naam <naam> | ruim branch <naam> in backend/frontend lokaal op | ruim branch <naam> in backend/frontend lokaal en remote op | rond werk af met commit (bericht) <jouw boodschap>"

@@ -1,6 +1,7 @@
 param(
     [string]$BaseBranch = "main",
-    [string]$BranchToDelete
+    [string]$BranchToDelete,
+    [switch]$DeleteRemote
 )
 
 $ErrorActionPreference = "Stop"
@@ -26,5 +27,17 @@ git branch -d $BranchToDelete
 
 Write-Host "Pruning remote-tracking branches..."
 git fetch --prune
+
+if ($DeleteRemote) {
+    $merged = git branch --merged origin/$BaseBranch | Select-String ("\\b" + [regex]::Escape($BranchToDelete) + "\\b")
+    if ($merged) {
+        Write-Host "Deleting remote branch origin/$BranchToDelete ..."
+        git push origin --delete $BranchToDelete
+        git fetch --prune
+    }
+    else {
+        Write-Host "Remote branch not deleted because '$BranchToDelete' is not confirmed merged."
+    }
+}
 
 Write-Host "Done."

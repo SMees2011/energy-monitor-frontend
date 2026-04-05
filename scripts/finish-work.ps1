@@ -65,10 +65,16 @@ try {
 }
 
 try {
-    gh pr edit $currentBranch --add-label automerge
-    Write-Host "Label 'automerge' added."
+    gh pr merge $currentBranch --auto --squash --delete-branch=false
+    Write-Host "Auto-merge enabled via GitHub CLI."
 } catch {
-    Write-Host "Could not add label 'automerge' automatically."
+    Write-Host "Could not enable auto-merge via GitHub CLI. Trying fallback label..."
+    try {
+        gh pr edit $currentBranch --add-label automerge
+        Write-Host "Label 'automerge' added."
+    } catch {
+        Write-Host "Could not add label 'automerge' automatically."
+    }
 }
 
 Write-Host "Done."
