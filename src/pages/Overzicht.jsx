@@ -1,10 +1,26 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Sun, Zap, ArrowUpRight, ArrowDownLeft, Activity, Euro } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { usePolling } from '../hooks/usePolling';
 import { getLatest, getPrijsNu, getZelfconsumptieNu, getRealtimeStackedGrafiek } from '../services/api';
 import StatCard from '../components/layout/StatCard';
 import PageHeader from '../components/layout/PageHeader';
+
+const REALTIME_VISIBLE_WINDOW_MS = 2 * 60 * 1000;
+const REALTIME_SMOOTHING_POINTS = 3;
+
+const movingAverage = (values, windowSize) => {
+    if (windowSize <= 1) {
+        return values;
+    }
+
+    return values.map((_, index) => {
+        const start = Math.max(0, index - windowSize + 1);
+        const slice = values.slice(start, index + 1);
+        const sum = slice.reduce((acc, value) => acc + value, 0);
+        return Math.round(sum / slice.length);
+    });
+};
 
 const buildRealtimeChartData = (injectie, eigenVerbruik, verbruikVanNet) => {
     const timestamps = Array.from(new Set([
@@ -13,11 +29,41 @@ const buildRealtimeChartData = (injectie, eigenVerbruik, verbruikVanNet) => {
         ...Object.keys(verbruikVanNet ?? {}),
     ])).sort();
 
-    return timestamps.map((ts) => ({
+    const rows = timestamps.map((ts) => ({
         time: ts,
         injectie: Math.round(injectie?.[ts] ?? 0),
         eigenVerbruik: Math.round(eigenVerbruik?.[ts] ?? 0),
         verbruikVanNet: Math.round(verbruikVanNet?.[ts] ?? 0),
+    }));
+
+    if (rows.length === 0) {
+        return rows;
+    }
+
+    const newestTimestamp = new Date(rows[rows.length - 1].time).getTime();
+    const visibleRows = rows.filter((row) => {
+        const ts = new Date(row.time).getTime();
+        return Number.isFinite(ts) && newestTimestamp - ts <= REALTIME_VISIBLE_WINDOW_MS;
+    });
+
+    const injectieSmoothed = movingAverage(
+        visibleRows.map((row) => row.injectie),
+        REALTIME_SMOOTHING_POINTS,
+    );
+    const eigenVerbruikSmoothed = movingAverage(
+        visibleRows.map((row) => row.eigenVerbruik),
+        REALTIME_SMOOTHING_POINTS,
+    );
+    const verbruikVanNetSmoothed = movingAverage(
+        visibleRows.map((row) => row.verbruikVanNet),
+        REALTIME_SMOOTHING_POINTS,
+    );
+
+    return visibleRows.map((row, index) => ({
+        ...row,
+        injectie: injectieSmoothed[index],
+        eigenVerbruik: eigenVerbruikSmoothed[index],
+        verbruikVanNet: verbruikVanNetSmoothed[index],
     }));
 };
 
@@ -26,6 +72,13 @@ const buildRealtimeChartData = (injectie, eigenVerbruik, verbruikVanNet) => {
  * Data is polled every 5 seconds from the Spring Boot backend.
  */
 const Overzicht = () => {
+    const [now, setNow] = useState(() => new Date());
+
+    useEffect(() => {
+        const timerId = setInterval(() => setNow(new Date()), 1000);
+        return () => clearInterval(timerId);
+    }, []);
+
     const fetchLatest = useCallback(() => getLatest(), []);
     const fetchPrijs = useCallback(() => getPrijsNu(), []);
     const fetchZelfconsumptie = useCallback(() => getZelfconsumptieNu(), []);
@@ -34,7 +87,7 @@ const Overzicht = () => {
     const { data: latest } = usePolling(fetchLatest, 5000);
     const { data: prijs } = usePolling(fetchPrijs, 60000);
     const { data: zelfconsumptie } = usePolling(fetchZelfconsumptie, 5000);
-    const { data: realtimeStacked, loading: realtimeLoading } = usePolling(fetchRealtimeStacked, 5000);
+    const { data: realtimeStacked, loading: realtimeLoading } = usePolling(fetchRealtimeStacked, 1000);
 
     const pvProductie = latest?.sb4_0_1av_41_879_pv_power ?? 0;
     const eigenVerbruik = latest?.zonnepaneel_eigen_verbruik ?? 0;
@@ -46,6 +99,19 @@ const Overzicht = () => {
 
     const formatWatt = (w) => w >= 1000 ? `${(w / 1000).toFixed(2)}` : `${Math.round(w)}`;
     const formatWattUnit = (w) => w >= 1000 ? 'kW' : 'W';
+    const datePart = now.toLocaleDateString('nl-BE', {
+        weekday: 'long',
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+    });
+    const timePart = now.toLocaleTimeString('nl-BE', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+    });
+    const headerSubtitle = `${datePart} ${timePart}`;
     const realtimeData = realtimeStacked
         ? buildRealtimeChartData(realtimeStacked.injectie, realtimeStacked.eigenVerbruik, realtimeStacked.verbruikVanNet)
         : [];
@@ -54,7 +120,7 @@ const Overzicht = () => {
         <div className="p-4">
             <PageHeader
                 title="Overzicht"
-                subtitle={new Date().toLocaleDateString('nl-BE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                subtitle={headerSubtitle}
             />
 
             {/* Realtime stat cards */}
@@ -102,7 +168,7 @@ const Overzicht = () => {
             </div>
 
             {/* Energiestroom */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 mb-4">
+            <div className="realtime-chart-no-x bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 mb-4">
                 <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Energiestroom</div>
                 <div className="flex items-center gap-3">
                     <div className="flex-1 bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
@@ -135,10 +201,10 @@ const Overzicht = () => {
                 </div>
             </div>
 
-            {/* Real-time energy graph (last 5 minutes at 5-second resolution) */}
+            {/* Real-time energy graph (smoothed over a short 2-minute window) */}
             <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 mb-4">
                 <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
-                    Energieverdeling - realtime (laatste 5 minuten)
+                    Energieverdeling - realtime (laatste 2 minuten)
                 </div>
                 {realtimeLoading ? (
                     <div className="h-48 flex items-center justify-center text-sm text-gray-400 dark:text-gray-500">
@@ -146,25 +212,22 @@ const Overzicht = () => {
                     </div>
                 ) : realtimeData && realtimeData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={220}>
-                        <AreaChart data={realtimeData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                        <AreaChart data={realtimeData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }} isAnimationActive={true} animationDuration={1500}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                             <XAxis
                                 dataKey="time"
-                                tick={{ fontSize: 11, fill: '#9ca3af' }}
-                                tickFormatter={(time) => {
-                                    if (!time) return '';
-                                    const date = new Date(time);
-                                    return date.toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                                }}
+                                ticks={[]}
+                                tickFormatter={() => ''}
+                                tick={false}
+                                axisLine={false}
+                                tickLine={false}
+                                interval={0}
+                                height={0}
                             />
                             <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} unit="W" />
                             <Tooltip
                                 formatter={(val) => [`${Math.round(val ?? 0)} W`]}
-                                labelFormatter={(label) => {
-                                    if (!label) return '';
-                                    const date = new Date(label);
-                                    return date.toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                                }}
+                                labelFormatter={() => ''}
                             />
                             <Legend wrapperStyle={{ fontSize: 12 }} />
                             <Area

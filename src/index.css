@@ -1,3 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.realtime-chart-no-x .recharts-cartesian-axis.recharts-xAxis {
+	display: none;
+}
+
+.realtime-chart-no-x .recharts-tooltip-label {
+	display: none;
+}
