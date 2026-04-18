@@ -8,6 +8,21 @@ const api = axios.create({
     timeout: 10000,
 });
 
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        const status = error?.response?.status;
+        if (status === 502) {
+            error.message = 'Backend tijdelijk onbereikbaar (502). Opnieuw proberen...';
+        } else if (status && status >= 500) {
+            error.message = `Serverfout (${status}). Opnieuw proberen...`;
+        } else if (!error?.response) {
+            error.message = 'Netwerkfout. Controleer backend/connectie.';
+        }
+        return Promise.reject(error);
+    }
+);
+
 /**
  * Fetches the latest real-time sensor values.
  */
