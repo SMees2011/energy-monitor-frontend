@@ -223,6 +223,61 @@ test.describe('Overzicht pagina - Comprehensive Coverage', () => {
   });
 
   test('page laadt zonder javascript console errors', async ({ page }) => {
+    await page.route('**/api/**', async (route) => {
+      const { pathname } = new URL(route.request().url());
+      const now = new Date();
+      const t1 = new Date(now.getTime() - 10000).toISOString();
+      const t2 = now.toISOString();
+
+      if (pathname.endsWith('/latest')) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            sb4_0_1av_41_879_pv_power: 1200,
+            zonnepaneel_eigen_verbruik: 800,
+            zonnepaneel_injectie: 400,
+            verbruik_van_net: 150,
+            totaal_verbruik: 950,
+          }),
+        });
+      }
+
+      if (pathname.endsWith('/prijs/nu')) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ prijs: 0.1234 }),
+        });
+      }
+
+      if (pathname.endsWith('/zelfconsumptie/nu')) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ percentage: 84.2 }),
+        });
+      }
+
+      if (pathname.endsWith('/grafiek/realtime-stacked')) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            injectie: { [t1]: 300, [t2]: 350 },
+            eigenVerbruik: { [t1]: 700, [t2]: 750 },
+            verbruikVanNet: { [t1]: 120, [t2]: 130 },
+          }),
+        });
+      }
+
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: '{}',
+      });
+    });
+
     const errors = [];
     page.on('console', msg => {
       if (msg.type() === 'error') errors.push(msg.text());
