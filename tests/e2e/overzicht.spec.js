@@ -208,9 +208,6 @@ test.describe('Overzicht pagina - Comprehensive Coverage', () => {
   test('page blijft responsive na tab switch heen en terug', async ({ page }) => {
     await page.goto('/');
 
-    // Get initial state
-    const initialSubtitle = await page.locator('h1:has-text("Overzicht") + p').textContent();
-    
     // Navigate away and back
     await page.getByRole('button', { name: 'Verbruik' }).click();
     await page.waitForTimeout(500);
