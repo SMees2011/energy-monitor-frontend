@@ -7,7 +7,7 @@ test.describe('Overzicht pagina - Comprehensive Coverage', () => {
     await page.goto('/');
 
     await expect(page.getByRole('heading', { name: 'Overzicht' })).toBeVisible();
-    await expect(page.getByText('Energieverdeling - realtime (laatste 2 minuten)')).toBeVisible();
+    await expect(page.getByText('Energieverdeling - realtime (laatste minuut)')).toBeVisible();
 
     const cardsGrid = page.locator('div.grid.grid-cols-5').first();
     await expect(cardsGrid.getByText('PV Productie', { exact: true })).toBeVisible();
@@ -40,7 +40,7 @@ test.describe('Overzicht pagina - Comprehensive Coverage', () => {
 
     await page.getByRole('button', { name: 'Overzicht' }).click();
     await expect(page.getByRole('heading', { name: 'Overzicht' })).toBeVisible();
-    await expect(page.getByText('Energieverdeling - realtime (laatste 2 minuten)')).toBeVisible();
+    await expect(page.getByText('Energieverdeling - realtime (laatste minuut)')).toBeVisible();
   });
 
   // ==================== STATCARD VALUE TESTS ====================
@@ -106,7 +106,7 @@ test.describe('Overzicht pagina - Comprehensive Coverage', () => {
     await page.waitForTimeout(1500);
     
     // Find chart section by header text
-    await expect(page.getByText('Energieverdeling - realtime (laatste 2 minuten)')).toBeVisible();
+    await expect(page.getByText('Energieverdeling - realtime (laatste minuut)')).toBeVisible();
     
     // Chart should contain legend with series names (one or both visible)
     const pageText = await page.textContent('body');
@@ -152,7 +152,7 @@ test.describe('Overzicht pagina - Comprehensive Coverage', () => {
     await page.goto('/');
 
     // Initially might show "Laden..." during first fetch
-    const chartSection = page.locator('div').filter({ has: page.getByText('Energieverdeling - realtime (laatste 2 minuten)') }).first();
+    const chartSection = page.locator('div').filter({ has: page.getByText('Energieverdeling - realtime (laatste minuut)') }).first();
     
     // After navigation, chart should eventually load
     await expect(chartSection.getByText('Eigen verbruik')).toBeVisible({ timeout: 5000 });
@@ -196,7 +196,7 @@ test.describe('Overzicht pagina - Comprehensive Coverage', () => {
     await page.waitForTimeout(1500);
     
     // Chart header should be visible
-    await expect(page.getByText('Energieverdeling - realtime (laatste 2 minuten)')).toBeVisible();
+    await expect(page.getByText('Energieverdeling - realtime (laatste minuut)')).toBeVisible();
     
     // Page should render without layout errors
     const bodyText = await page.textContent('body');
@@ -214,7 +214,7 @@ test.describe('Overzicht pagina - Comprehensive Coverage', () => {
     await page.getByRole('button', { name: 'Overzicht' }).click();
     
     // Verify everything reloaded
-    await expect(page.getByText('Energieverdeling - realtime (laatste 2 minuten)')).toBeVisible();
+    await expect(page.getByText('Energieverdeling - realtime (laatste minuut)')).toBeVisible();
     
     // Stat cards should all still be there
     const cardsGrid = page.locator('div.grid.grid-cols-5').first();
