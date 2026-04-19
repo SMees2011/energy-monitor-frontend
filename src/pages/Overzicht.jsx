@@ -6,7 +6,7 @@ import { getLatest, getPrijsNu, getZelfconsumptieNu, getRealtimeStackedGrafiek }
 import StatCard from '../components/layout/StatCard';
 import PageHeader from '../components/layout/PageHeader';
 
-const REALTIME_VISIBLE_WINDOW_MS = 2 * 60 * 1000;
+const REALTIME_VISIBLE_WINDOW_MS = 1 * 60 * 1000;
 const REALTIME_SMOOTHING_POINTS = 3;
 
 const movingAverage = (values, windowSize) => {
@@ -201,10 +201,10 @@ const Overzicht = () => {
                 </div>
             </div>
 
-            {/* Real-time energy graph (smoothed over a short 2-minute window) */}
+            {/* Real-time energy graph (smoothed over a short 1-minute window) */}
             <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-4 mb-4">
                 <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
-                    Energieverdeling - realtime (laatste 2 minuten)
+                    Energieverdeling - realtime (laatste minuut)
                 </div>
                 {realtimeLoading ? (
                     <div className="h-48 flex items-center justify-center text-sm text-gray-400 dark:text-gray-500">

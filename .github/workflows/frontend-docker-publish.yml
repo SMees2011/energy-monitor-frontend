@@ -40,7 +40,6 @@ jobs:
           images: ghcr.io/${{ env.OWNER_LC }}/energy-monitor-frontend
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
-            type=ref,event=branch
             type=ref,event=tag
             type=sha
 
@@ -55,22 +54,3 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  deploy-frontend:
-    runs-on: ubuntu-latest
-    needs: publish-image
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    steps:
-      - name: Deploy frontend container on target host
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script_stop: true
-          script: |
-            set -e
-            cd "${{ secrets.DEPLOY_PATH }}"
-            echo "${{ secrets.GHCR_DEPLOY_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_DEPLOY_USERNAME }}" --password-stdin
-            docker compose pull frontend
-            docker compose up -d frontend
-            docker image prune -f
